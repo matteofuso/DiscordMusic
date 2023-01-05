@@ -1,2 +1,0 @@
-# DiscordMusic
-Fuck you
