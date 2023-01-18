@@ -1,28 +1,13 @@
 import json
-import requests
-from colorama import Fore, Style
 import discord
 from discord import app_commands, Interaction, Intents, Client
-from discord.ext import commands,tasks
-import re
-from urllib.parse import urlparse
-import os
-from dotenv import load_dotenv
-import youtube_dl
-import asyncio
-
-load_dotenv()
+from pytube import YouTube
 
 try:
     with open("config.json", 'r') as f:
         config = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError):
     config = {}
-    print("Inserisci il token del bot:")
-    
-try:
-    config["token"]
-except KeyError:
     print("Inserisci il token del bot:")
 
 # while True:
@@ -52,29 +37,8 @@ except KeyError:
 
 # Bot Start
 
-youtube_dl.utils.bug_reports_message = lambda: ''
-
-ytdl_format_options = {
-    'format': 'bestaudio/best',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
-}
-
-ffmpeg_options = {
-    'options': '-vn'
-}
-
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-
-class FunnyBadge(Client, discord.PCMVolumeTransformer):
-    def __init__(self, source, *,data, intents: Intents, stream=False):
+class musicBot(Client):
+    def __init__(self, *, intents: Intents):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
 
@@ -82,116 +46,80 @@ class FunnyBadge(Client, discord.PCMVolumeTransformer):
         """ This is called when the bot boots, to setup the global commands """
         await self.tree.sync()
         
-    async def from_url(cls, url, *, loop=None, stream=False):
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-        if 'entries' in data:
-            # take first item from a playlist
-            data = data['entries'][0]
-        filename = data['title'] if stream else ytdl.prepare_filename(data)
-        return filename
-        
-client = FunnyBadge(intents=Intents.none())
+client = musicBot(intents=Intents.all())
 
 @client.event
 async def on_ready():
-#     print(f"""
-# Logged in as {client.user} (ID: {client.user.id})
+     print(f"""Logged in as {client.user} (ID: {client.user.id})
 
-# Use this URL to invite {client.user} to your server:
-# {Fore.LIGHTBLUE_EX}https://discord.com/api/oauth2/authorize?client_id={client.user.id}&scope=applications.commands%20bot{Fore.RESET}
-# """)
-    print("Logged")
-
-def is_url(string):
-   try:
-       result = urlparse(string)
-       return all([result.scheme, result.netloc])
-   except ValueError:
-       return False
-   
-def get_youtube(string):
-    regex = r'^(https?://)?(www\.)?'
-    regex += r'(youtube|youtu|youtube-nocookie)\.(com|be)/'
-    regex += r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
-    match = re.search(regex, string)
-    if match:
-        return (match.group(6)).split("?")[0]
-    else:
-        return False
-    
-def get_soundcloud(string):
-    regex = r'^(https?://)?(www\.)?'
-    regex += r'soundcloud\.com/[^/]+/[^/]+$'
-    match = re.search(regex, string)
-    if match:
-        track = string.split("/")
-        track = track[1] + track[2]
-        track = track.split("?")[0]
-        return track
-    else:
-        return False
-    
-def get_spotify(string):
-    track_regex = r'^(https?://)?(open|play|www)\.spotify\.com/track/([^/]+)$'
-    playlist_regex = r'^(https?://)?(open|play|www)\.spotify\.com/user/([^/]+)/playlist/([^/]+)$'
-    track_match = re.search(track_regex, string)
-    if track_match:
-        track_id = track_match.group(3)
-        return {"type": "track", "id": track_id}
-    else:
-        playlist_match = re.search(playlist_regex, string)
-        if playlist_match:
-            playlist_id = (playlist_match.group(4)).split("?")[0]
-            return {"type": "playlist", "id": playlist_id}
-        else:
-            return False
+Use this URL to invite {client.user} to your server:
+https://discord.com/api/oauth2/authorize?client_id={client.user.id}&scope=applications.commands%20bot""")
 
 @client.tree.command()
 async def play(interaction: discord.Interaction, canzone: str):
-    """Riproduci o aggiungi alla coda un pezzo
-
+    """Riproduci una canzone
+    
     Parameters
     -----------
     canzone: str
         Nome o URL della canzone
     """
-    if is_url(canzone):
-        id = get_youtube(canzone)
-        if id != False:
-            embed = discord.Embed(title="Riproducendo", description=f"Codice Video yt: {id}", color=0x4f4f4f)
-        else:
-            id = get_soundcloud(canzone)
-            if id !=False:
-                embed = discord.Embed(title="Riproducendo", description=f"Codice Video soundcloud: {id}", color=0x4f4f4f)
-            else:
-                id = get_spotify(canzone)
-                if id != False:
-                    embed = discord.Embed(title="Riproducendo", description=f"Codice Video spotify: {id['id']}", color=0x4f4f4f)
-                else:
-                    embed = discord.Embed(title="Errore", description=f"Non è riprodurre musica da internet se non da youtube,soundcloud o spotify", color=0xf01e1e)
-    else:
-        embed = discord.Embed(title="Riproducendo", description=f"{canzone}", color=0x4f4f4f)
-    await interaction.response.send_message(embed=embed)
-
-
-@client.tree.command()
-async def join(interaction: discord.Interaction, ctx):
-    """Tells the bot to join the voice channel"""
-    if not ctx.message.author.voice:
-        await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
+    if not interaction.user.voice:
+        await interaction.response.send_message("You are not connected to a voice channel.")
         return
+    if interaction.guild.voice_client:
+        if interaction.user.voice.channel != interaction.guild.voice_client.channel:
+            await interaction.response.send_message("You are not connected to the same voice channel as the bot.")
+            return
     else:
-        channel = ctx.message.author.voice.channel
-    await channel.connect()
+        if interaction.user.voice:
+            await interaction.user.voice.channel.connect()
+    voice_channel = interaction.guild.voice_client
+    # voice_channel.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source="./cache/youtube_dQw4w9WgXcQ.mp3"))
+    # await interaction.response.send_message("Riproduco riccardo")
+    video = YouTube(f"{canzone}", on_progress_callback=progress_callback)
+    await interaction.response.send_message(f'**Now playing:** {video.title}')
+    audio_stream = video.streams.get_audio_only()
+    print(f"Scaricando: {video.title} - {video.author}")
+    audio_stream.download(f"./cache/", filename=f"1.mp3")
+    
+    voice_channel.play(discord.FFmpegPCMAudio("./cache/1.mp3"))  
+  
+@client.tree.command()
+async def pause(interaction: discord.Interaction):
+    """Pausa la canzone"""
+    voice_channel = interaction.guild.voice_channel
+    if voice_channel.is_playing():
+        await voice_channel.pause()
+    else:
+        await interaction.response.send_message("The bot is not playing anything at the moment.")
     
 @client.tree.command()
-async def leave(interaction: discord.Interaction, ctx):
-    """To make the bot leave the voice channel"""
-    voice_client = ctx.message.guild.voice_client
-    if voice_client.is_connected():
-        await voice_client.disconnect()
+async def resume(interaction: discord.Interaction):
+    """Riprendi la riproduzione della canzone"""
+    voice_channel = interaction.guild.voice_channel
+    if voice_channel.is_paused():
+        await voice_channel.resume()
     else:
-        await ctx.send("The bot is not connected to a voice channel.")
+        await interaction.response.send_message("The bot was not playing anything before this. Use play_song command")
+
+@client.tree.command()
+async def stop(interaction: discord.Interaction):
+    """Interrompe la canzone"""
+    voice_channel = interaction.guild.voice_channel
+    if voice_channel.is_playing():
+        await voice_channel.stop()
+    else:
+        await interaction.response.send_message("The bot is not playing anything at the moment.")
+
+
+
+def progress_callback(stream, chunk, bytes_remaining):
+    # Calculate the progress as a percentage
+    progress = (100 * (stream.filesize - bytes_remaining)) / stream.filesize
+    # Print the progress bar
+    progress = '█' * int(progress/4)
+    print(f"\r↳ |{progress:<25}| {stream.filesize-bytes_remaining}/{stream.filesize} Bytes", end="")
+    print("\n")
 
 client.run(config["token"])
