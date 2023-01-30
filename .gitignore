@@ -3,3 +3,7 @@ bot/
 config.json
 __pycache__/*
 __pycache__/
+cache/*
+cache/
+Test/*
+Test/
