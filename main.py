@@ -98,6 +98,7 @@ async def play(interaction: discord.Interaction, canzone: str):
         site = "Youtube"
     else:
         site = format["site"]
+        data = []
     if site == "Youtube":
         if not "id" in data:
             data = YOUTUBE.track_fetch(format["url"])

@@ -3,5 +3,12 @@
 > Work in progess music bot:
 
 Status:
-- [ ] Queue / Play / Pause / Resume / ... Basic function
-- [ ] Music download from Youtube, Spotify, SoundCloud
+- [ ] Queue
+- [x] Play
+- [x] Pause
+- [x] Resume
+- [ ] Volume
+Services:
+    - [x] Youtube Music, Youtube
+    - [ ] Spotify
+    - [ ] Soundcloud
