@@ -115,5 +115,3 @@ def promt(text):
             "data": info,
             "url": f"https://youtube.com/watch?v={info['id']}"
         }
-        
-print(promt("rick astley never gonna give you up"))
