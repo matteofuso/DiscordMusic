@@ -3,43 +3,48 @@ import discord
 from discord import app_commands, Intents, Client
 import YOUTUBE
 import UTILS
+import requests
 
+# Load config
 try:
     with open("config.json", 'r') as f:
         config = json.load(f)
+# If the file doesn't exist or it's not valid
 except (FileNotFoundError, json.JSONDecodeError):
-    exit("config.json non trovato o non valido")
-#    config = {}
-#    print("Inserisci il token del bot:")
+    config = {}
+    print("Inserisci il token del bot:")
 
-# while True:
-#     if config.get("token") == None:
-#         config["token"] = input("> ")
-#     token = config["token"]
-#     head = {
-#         "Authorization": f"Bot {token}"
-#     }
-#     try:
-#         data = requests.get("https://discord.com/api/v10/users/@me", headers=head).json()
-#     except requests.exceptions.RequestException as e:
-#         if e.__class__ == requests.exceptions.ConnectionError:
-#             exit(f"{Fore.RED}ConnectionError{Fore.RESET}: Discord è bloccato nelle reti pubbliche, verifica di riuscire ad accedere a https://discord.com")
+while True:
+    # If the token is not in the config file
+    if "token" not in config:
+        config["token"] = input("> ")
+    # Check if the token is valid
+    token = config["token"]
+    head = {
+        "Authorization": f"Bot {token}"
+    }
+    try:
+        data = requests.get(
+            "https://discord.com/api/v10/users/@me", headers=head).json()
+    except requests.exceptions.RequestException as e:
+        if e.__class__ == requests.exceptions.ConnectionError:
+            exit(f"ConnectionError: Discord è bloccato nelle reti pubbliche, verifica di riuscire ad accedere a https://discord.com")
 
-#         elif e.__class__ == requests.exceptions.Timeout:
-#             exit(f"{Fore.RED}Timeout{Fore.RESET}: La connessione alle API di Discord ha impiegato troppo tempo (Sei rate limited?)")
-#         exit(f"Errore sconosciuto! Ulteriori informazioni:\n{e}")
+        elif e.__class__ == requests.exceptions.Timeout:
+            exit(f"Timeout: La connessione alle API di Discord ha impiegato troppo tempo (Sei rate limited?)")
+        exit(f"Errore sconosciuto! Ulteriori informazioni:\n{e}")
+    # If the token is valid, break the loop
+    if "id" in data:
+        break
+    # If the token is not valid, ask again
+    print(f"Token non valido Reinserisci il token: ")
+    config.pop("token", None)
 
-#     if data.get("id") != None:
-#         break
-#     print(f"{Fore.RED}Token non valido{Fore.RESET} Reinserisci il token: ")
-#     config.pop("token", None)
+# Save the token
+with open("config.json", "w") as f:
+    f.write(json.dumps(config, indent=4))
 
-# with open("config.json", "w") as f:
-#     f.write(json.dumps(config, indent=4))
-
-# Bot Start
-
-
+# Init bot
 class Bot(Client):
     def __init__(self, *, intents: Intents):
         super().__init__(intents=intents)
@@ -47,31 +52,35 @@ class Bot(Client):
 
     async def setup_hook(self) -> None:
         await self.tree.sync()
-
-
 client = Bot(intents=Intents.all())
 
-
+# Print bot info when ready
 @client.event
 async def on_ready():
-    print(f"""Logged in as {client.user} (ID: {client.user.id})
+    url = f"https://discord.com/api/oauth2/authorize?client_id={client.user.id}&scope=applications.commands"
+    print(f"Loggato come {client.user} (ID: {client.user.id})\n\nUsa questo link per invitare {client.user} nel tuo server:\n{url}")
+    # Set the bot presence - Uncomment the line you want to use
+    #await client.change_presence(activity=discord.Game(name="")) # Playing ...
+    #await client.change_presence(activity=discord.Streaming(name="", url="")) # Streaming ...
+    #await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="")) # Listening to ...
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="my code")) # Watching ...
 
-Use this URL to invite {client.user} to your server:
-https://discord.com/api/oauth2/authorize?client_id={client.user.id}&scope=applications.commands%20bot""")
+# Init queue - Need it soon
+queue = []
 
-
+# Create an embed with the song info
 def EmbedDetails(data, url, userID):
     description = f"[{data['name']} ({data['author']})]({url}) [<@{userID}>]\nDurata: ` [0:00 / {data['duration']}] `"
     embed = discord.Embed(title="Riproducendo", description=description)
     embed.set_thumbnail(url=data["cover"])
     return embed
 
-
+# Create an embed with the error
 def EmbedError(error):
     embed = discord.Embed(title="Errore", description=error, color=0xFF0000)
     return embed
 
-
+# Play command
 @client.tree.command()
 async def play(interaction: discord.Interaction, canzone: str):
     """Riproduci una canzone
@@ -81,96 +90,121 @@ async def play(interaction: discord.Interaction, canzone: str):
     canzone: str
         Nome o URL della canzone da riprodurre
     """
+    # Defer the response
     await interaction.response.defer()
+    # If the user is not connected to a voice channel
     if not interaction.user.voice:
         await interaction.followup.send(embed=EmbedError("Non sei connesso a un canale vocale."))
         return
+    # If the bot is connected to a voice channel
     if interaction.guild.voice_client:
+        # If the user is not connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
             await interaction.followup.send(embed=EmbedError("You are not connected to the same voice channel as the bot."))
             return
+    # Get datails about the promt
     format = UTILS.promt(canzone)
+    # If there is an error
     if "error" in format:
         await interaction.followup.send(embed=EmbedError(format["error"]))
         return
+    # If the promt is not a link
     elif "search" in format:
         data = format["data"]
         site = "Youtube"
     else:
         site = format["site"]
         data = []
+    # Check the site
     if site == "Youtube":
+        # If the promt is a link
         if not "id" in data:
+            # Get the video details
             data = YOUTUBE.track_fetch(format["url"])
+            # If there is an error
             if "error" in data:
                 await interaction.followup.send(embed=EmbedError(data["error"]))
                 return
+        # Reply with the song info
         await interaction.followup.send(embed=EmbedDetails(data, format["url"], interaction.user.id))
+        # Download the song
         position = YOUTUBE.track_download(format["url"])
     else:
+        # If the service is not supported yet
         await interaction.followup.send(embed=EmbedError("Supporto solo video di youtube per ora"))
         return
-
+    # If the bot is not connected to a voice channel
     if not interaction.guild.voice_client:
         await interaction.user.voice.channel.connect()
     voice_channel = interaction.guild.voice_client
+    # Play the song
     voice_channel.play(discord.FFmpegPCMAudio(position))
 
-
+# Stop command
 @client.tree.command()
 async def stop(interaction: discord.Interaction):
     """Ferma la riproduzione"""
+    # Check if the user is connected to a voice channel
     if not interaction.user.voice:
-        await interaction.response.send_message("Non sei connesso a un canale vocale.")
+        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
         return
+    # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
+        # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message("Non sei connesso al canale vocale del bot.")
+            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
             return
-    else:
-        if interaction.user.voice:
-            await interaction.response.send_message("Non sei connesso a un canale vocale.")
-            return
+    # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
+    if not voice_channel.is_playing():
+        await interaction.response.send_message(embed=EmbedError("Non ci sono video da fermare."))
+    # Stop the song
     voice_channel.stop()
     await interaction.response.send_message("La riproduzione è stata fermata.")
 
-
+# Pause command
 @client.tree.command()
 async def pause(interaction: discord.Interaction):
     """Pausa la canzone"""
+    # Check if the user is connected to a voice channel
     if not interaction.user.voice:
-        await interaction.response.send_message("Non sei connesso a un canale vocale.")
+        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
         return
+    # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
+        # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message("Non sei connesso al canale vocale del bot.")
+            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
             return
-    else:
-        if interaction.user.voice:
-            await interaction.response.send_message("Non sei connesso a un canale vocale.")
-            return
+    # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
+    if not voice_channel.is_playing():
+        await interaction.response.send_message(embed=EmbedError("Non sto riproducendo nulla."))
+    # Pause the song
     voice_channel.pause()
     await interaction.response.send_message("Ho messo in pausa la musica.")
 
-
+# Resume command
 @client.tree.command()
 async def resume(interaction: discord.Interaction):
     """Riprende la canzone"""
+    # Check if the user is connected to a voice channel
     if not interaction.user.voice:
-        await interaction.response.send_message("Non sei connesso a un canale vocale.")
+        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
         return
+    # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
+        # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message("Non sei connesso al canale vocale del bot.")
+            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
             return
-    else:
-        if interaction.user.voice:
-            await interaction.response.send_message("Non sei connesso a un canale vocale.")
-            return
+    # Check ther's a song paused
     voice_channel = interaction.guild.voice_client
+    if not voice_channel.is_paused():
+        await interaction.response.send_message(embed=EmbedError("Non ci sono canzoni in pausa."))
+    # Resume the song
     voice_channel.resume()
     await interaction.response.send_message("Ho ripreso la musica.")
 
+# Run the bot
 client.run(config["token"])
