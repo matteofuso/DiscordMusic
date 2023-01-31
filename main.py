@@ -1,57 +1,25 @@
-import json
 import discord
 from discord import app_commands, Intents, Client
 import YOUTUBE
 import UTILS
-import requests
 
-# Load config
-try:
-    with open("config.json", 'r') as f:
-        config = json.load(f)
-# If the file doesn't exist or it's not valid
-except (FileNotFoundError, json.JSONDecodeError):
-    config = {}
-    print("Inserisci il token del bot:")
-
-while True:
-    # If the token is not in the config file
-    if "token" not in config:
-        config["token"] = input("> ")
-    # Check if the token is valid
-    token = config["token"]
-    head = {
-        "Authorization": f"Bot {token}"
-    }
-    try:
-        data = requests.get(
-            "https://discord.com/api/v10/users/@me", headers=head).json()
-    except requests.exceptions.RequestException as e:
-        if e.__class__ == requests.exceptions.ConnectionError:
-            exit(f"ConnectionError: Discord è bloccato nelle reti pubbliche, verifica di riuscire ad accedere a https://discord.com")
-
-        elif e.__class__ == requests.exceptions.Timeout:
-            exit(f"Timeout: La connessione alle API di Discord ha impiegato troppo tempo (Sei rate limited?)")
-        exit(f"Errore sconosciuto! Ulteriori informazioni:\n{e}")
-    # If the token is valid, break the loop
-    if "id" in data:
-        break
-    # If the token is not valid, ask again
-    print(f"Token non valido Reinserisci il token: ")
-    config.pop("token", None)
-
-# Save the token
-with open("config.json", "w") as f:
-    f.write(json.dumps(config, indent=4))
+# Get token
+token = UTILS.get_token()
 
 # Init bot
 class Bot(Client):
     def __init__(self, *, intents: Intents):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
+        self.volume = 0.25
 
     async def setup_hook(self) -> None:
         await self.tree.sync()
+    
+    def set_volume(self, volume):
+        self.volume = volume
+        current_volume.volume = volume
+        
 client = Bot(intents=Intents.all())
 
 # Print bot info when ready
@@ -64,9 +32,6 @@ async def on_ready():
     #await client.change_presence(activity=discord.Streaming(name="", url="")) # Streaming ...
     #await client.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="")) # Listening to ...
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="my code")) # Watching ...
-
-# Init queue - Need it soon
-queue = []
 
 # Create an embed with the song info
 def EmbedDetails(data, url, userID):
@@ -138,7 +103,42 @@ async def play(interaction: discord.Interaction, canzone: str):
         await interaction.user.voice.channel.connect()
     voice_channel = interaction.guild.voice_client
     # Play the song
-    voice_channel.play(discord.FFmpegPCMAudio(position))
+    source = discord.FFmpegPCMAudio(position)
+    player = discord.PCMVolumeTransformer(source)
+    player.volume = client.volume
+    voice_channel.play(player)
+    global current_volume
+    current_volume = player
+    
+# Volume control
+@client.tree.command()
+async def volume(interaction: discord.Interaction, volume: int):
+    """Controlla il volume
+
+    Parameters
+    -----------
+    volume: int
+        Percentuale di volume da impostare
+    """
+    # Check if the user is connected to a voice channel
+    if not interaction.user.voice:
+        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
+        return
+    # Check if the bot is connected to a voice channel
+    if interaction.guild.voice_client:
+        # Check if the user is connected to the same voice channel as the bot
+        if interaction.user.voice.channel != interaction.guild.voice_client.channel:
+            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
+            return
+    else:
+        # If the bot is not connected to a voice channel
+        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
+    # Check if the volume is valid
+    if volume <= 0 or volume > 200:
+        await interaction.response.send_message(embed=EmbedError("Il volume deve essere compreso tra 0 e 200."))
+        return
+    client.set_volume(volume / 200)
+    await interaction.response.send_message(f"Volume impostato a {volume}%")
 
 # Stop command
 @client.tree.command()
@@ -154,6 +154,9 @@ async def stop(interaction: discord.Interaction):
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
             await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
             return
+    else:
+        # If the bot is not connected to a voice channel
+        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
     # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
     if not voice_channel.is_playing():
@@ -176,6 +179,9 @@ async def pause(interaction: discord.Interaction):
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
             await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
             return
+    else:
+        # If the bot is not connected to a voice channel
+        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
     # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
     if not voice_channel.is_playing():
@@ -198,6 +204,9 @@ async def resume(interaction: discord.Interaction):
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
             await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
             return
+    else:
+        # If the bot is not connected to a voice channel
+        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
     # Check ther's a song paused
     voice_channel = interaction.guild.voice_client
     if not voice_channel.is_paused():
@@ -207,4 +216,4 @@ async def resume(interaction: discord.Interaction):
     await interaction.response.send_message("Ho ripreso la musica.")
 
 # Run the bot
-client.run(config["token"])
+client.run(token)

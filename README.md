@@ -10,6 +10,7 @@ Any suggestions are welcome! Here you can find the status of the project.
     - [ ] Volume
     - [ ] Queue
     - [ ] Skip
+    - [ ] Shuffle
     - [ ] Config (Language, Credentials, etc.)
 
 - [ ] Cache:
@@ -20,3 +21,6 @@ Any suggestions are welcome! Here you can find the status of the project.
     - [x] Youtube Music, Youtube
     - [ ] Spotify
     - [ ] Soundcloud
+
+- [ ] Features:
+    - [ ] Trivia
