@@ -12,25 +12,30 @@ ydl_opts = {
 
 # Get video info
 def videoInfo(func):
-    # Get best quality cover
-    cover = func["thumbnail"]
-    for tumb in func["thumbnails"]:
-        if not "resolution" in tumb:
-            break
-        cover = tumb["url"]
-    # Debug data
-    if debug:
-        with open("debug.json", "w") as f:
-            json.dump(func, f, indent=4)
-    # Return data
-    author = func["uploader"].replace(" - Topic", "")
-    return {
-        "id": func["id"],
-        "name": func["title"],
-        "cover": cover,
-        "author": author,
-        "duration": func["duration_string"]
-    }
+    try:
+        # Get best quality cover
+        cover = func["thumbnail"]
+        for tumb in func["thumbnails"]:
+            if not "resolution" in tumb:
+                break
+            cover = tumb["url"]
+        # Debug data
+        if debug:
+            with open("debug.json", "w") as f:
+                json.dump(func, f, indent=4)
+        # Return data
+        author = func["uploader"].replace(" - Topic", "")
+        return {
+            "id": func["id"],
+            "name": func["title"],
+            "cover": cover,
+            "author": author,
+            "duration": func["duration_string"]
+        }
+    except:
+        return {
+            "error": "Video not found"
+        }
 
 # Get video info
 def track_fetch(url):

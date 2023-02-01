@@ -1,15 +1,15 @@
 # DiscordMusic
 
-After Youtube has striked down the Youtube Music API, I decided to make my own music bot for Discord. This bot is still in development, and I will try to add more features as soon as possible.
+After Youtube has striked down all music bots, I decided to make my own bot for Discord. This bot is still in development, and I will try to add more features as soon as possible.
 Any suggestions are welcome! Here you can find the status of the project.
 
 - [ ] Commands:
     - [x] Play
     - [x] Pause
     - [x] Resume
-    - [ ] Volume
-    - [ ] Queue
-    - [ ] Skip
+    - [x] Volume
+    - [x] Queue
+    - [x] Skip
     - [ ] Shuffle
     - [ ] Config (Language, Credentials, etc.)
 
@@ -23,4 +23,7 @@ Any suggestions are welcome! Here you can find the status of the project.
     - [ ] Soundcloud
 
 - [ ] Features:
+    - [x] Multi-Server
     - [ ] Trivia
+    - [ ] Save queue in a file (When the bot is restarted, the queue is not lost)
+    - [ ] Errr handling

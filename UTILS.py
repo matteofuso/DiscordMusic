@@ -137,7 +137,7 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 
 # Get the token from the config file
-def get_token():
+def get_config():
     while True:
         # If the token is not in the config file
         if "token" not in config:
@@ -164,6 +164,13 @@ def get_token():
         print(f"Token non valido Reinserisci il token: ")
         config.pop("token", None)
     # Save the token
+    if "volume" not in config:
+        print("Inserisci il volume default (0-200): ")
+        volume = int(input("> "))
+        while volume <= 0 or volume > 200:
+            print("Il volume deve essere compreso tra 0 e 200. Reinserisci il volume: ")
+            volume = input("> ")
+        config["volume"] = volume / 200
     with open("config.json", "w") as f:
         f.write(json.dumps(config, indent=4))
-    return token
+    return config["volume"], token
