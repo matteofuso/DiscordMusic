@@ -10,8 +10,13 @@ Any suggestions are welcome! Here you can find the status of the project.
     - [x] Volume
     - [x] Queue
     - [x] Skip
+    - [ ] Skip x songs
     - [ ] Shuffle
     - [ ] Config (Language, Credentials, etc.)
+
+- [x] Type:
+    - [x] Video
+    - [x] Playlist
 
 - [ ] Cache:
     - [ ] Auto delete file when the folder is bigger than xGB (configurable), in a FIFO way
@@ -26,4 +31,5 @@ Any suggestions are welcome! Here you can find the status of the project.
     - [x] Multi-Server
     - [ ] Trivia
     - [ ] Save queue in a file (When the bot is restarted, the queue is not lost)
-    - [ ] Errr handling
+    - [ ] Error handling
+    - [ ] Music Download
