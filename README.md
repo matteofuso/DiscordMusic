@@ -26,6 +26,7 @@ Any suggestions are welcome! Here you can find the status of the project.
     - [x] Youtube Music, Youtube
     - [ ] Spotify
     - [ ] Soundcloud
+    - [ ] Deezer
 
 - [ ] Features:
     - [x] Multi-Server

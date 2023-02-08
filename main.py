@@ -1,8 +1,9 @@
 import discord
 from discord import app_commands, Intents, Client
-import YOUTUBE
-import CONFIGS
-import UTILS
+import LIB.YOUTUBE as YOUTUBE
+import LIB.SPOTIFY as SPOTIFY
+import LIB.CONFIGS as CONFIGS
+import LIB.UTILS as UTILS
 import asyncio
 
 # Get token and the default volume
@@ -145,7 +146,9 @@ async def play(interaction: discord.Interaction, canzone: str):
         data = format["search"]
         site = "Youtube"
     # Check the site and fetch the song details
-    if site == "Youtube" and data == []:
+    if data != []:
+        pass
+    elif site == "Youtube":
         # If the promt is a link
         if not search:
             # Get the video details
@@ -154,6 +157,17 @@ async def play(interaction: discord.Interaction, canzone: str):
             if "error" in data:
                 await interaction.followup.send(embed=EmbedError(data["error"]))
                 return
+    elif site == "Spotify":
+        if format["type"] == "track":
+            print(format["id"])
+            data = SPOTIFY.track_metadata(format["id"], interaction.user.id)
+            print(data)
+        else:
+            await interaction.followup.send(embed=EmbedError("Non puoi riprodurre una playlist o un album."))
+            return
+        if "error" in data:
+            await interaction.followup.send(embed=EmbedError(data["error"]))
+            return
     # If the bot is not connected to a voice channel
     if not interaction.guild.voice_client:
         await interaction.user.voice.channel.connect()
@@ -177,6 +191,8 @@ async def play(interaction: discord.Interaction, canzone: str):
     # Download the song
     if site == "Youtube":
         position = YOUTUBE.track_download(data[0]["id"])
+    elif site == "Spotify":
+        position = SPOTIFY.downlaod_track(data[0]["id"])
     # Play the song
     guilds.players[guild_id] = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(position))
     guilds.players[guild_id].volume = guilds.get_volume(guild_id)
@@ -202,6 +218,8 @@ async def nextQueue(e, voice_channel, guild_id, text_channel):
     # Download the song
     if data["site"] == "Youtube":
         position = YOUTUBE.track_download(data["id"])
+    elif data["site"] == "Spotify":
+        position = SPOTIFY.downlaod_track(data["id"])
     # Play the song
     guilds.players[guild_id] = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(position))
     guilds.players[guild_id].volume = guilds.get_volume(guild_id)
