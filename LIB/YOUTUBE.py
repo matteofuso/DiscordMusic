@@ -2,20 +2,21 @@ import yt_dlp
 import requests
 from PIL import Image
 import os
-import CONFIGS
 import re
+import json
 
 debug = False
 
 # Youtube-dl options
 ydl_opts = {
     'format': 'm4a/bestaudio/best',
-    'outtmpl': 'cache/music/YouTube_%(id)s.%(ext)s',
+    'outtmpl': './cache/music/YouTube_%(id)s.%(ext)s',
     "quiet": not debug
 }
 
 # Get the Youtube API key
-api_key = CONFIGS.get_youtube_api_key()
+with open("config.json", "r") as configFile:
+    api_key = json.load(configFile)["youtubeApiKey"]
 
 # Function to convert youtube duration to a readable format
 def convert_duration(duration):
@@ -38,15 +39,15 @@ def convert_duration(duration):
 # Function to downlad and crop the cover as a square
 def cover(url, id):
     image = requests.get(url)
-    with open(f"cache/cover/YouTube_{id}.jpg", "wb") as f:
+    with open(f"./cache/cover/YouTube_{id}.jpg", "wb") as f:
         f.write(image.content)
-    img = Image.open(os.path.join(os.getcwd(), f"cache/cover/YouTube_{id}.jpg"))
+    img = Image.open(os.path.join(os.getcwd(), f"./cache/cover/YouTube_{id}.jpg"))
     w = img.size[0]
     h = img.size[1]
     crop = int((w - h)/2)
     box = (crop, 0, w - crop, h)
     cropped_img = img.crop(box)
-    cropped_img.save(os.path.join(os.getcwd(), f"cache/cover/YouTube_{id}.jpg"))
+    cropped_img.save(os.path.join(os.getcwd(), f"./cache/cover/YouTube_{id}.jpg"))
     return f"cache/cover/YouTube_{id}.jpg"
 
 # Function to fetch the duration of a video

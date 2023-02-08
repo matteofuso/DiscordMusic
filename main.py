@@ -1,9 +1,6 @@
 import discord
 from discord import app_commands, Intents, Client
-import LIB.YOUTUBE as YOUTUBE
-import LIB.SPOTIFY as SPOTIFY
-import LIB.CONFIGS as CONFIGS
-import LIB.UTILS as UTILS
+from LIB import YOUTUBE, SPOTIFY, CONFIGS, UTILS
 import asyncio
 
 # Get token and the default volume
@@ -132,7 +129,7 @@ async def play(interaction: discord.Interaction, canzone: str):
             await interaction.followup.send(embed=EmbedError("You are not connected to the same voice channel as the bot."))
             return
     # Get datails about the promt
-    format = UTILS.promt(canzone, interaction.user.id)
+    format = UTILS.promt(canzone)
     search = False
     # If there is an error
     if "error" in format:
@@ -141,13 +138,12 @@ async def play(interaction: discord.Interaction, canzone: str):
     # If the promt is not a link
     elif "site" in format:
         site = format["site"]
-        data = []
     else:
         data = format["search"]
         site = "Youtube"
     # Check the site and fetch the song details
-    if data != []:
-        pass
+    if site == "toSearch":
+        data = YOUTUBE.track_search(canzone, interaction.user.id)
     elif site == "Youtube":
         # If the promt is a link
         if not search:
@@ -159,9 +155,7 @@ async def play(interaction: discord.Interaction, canzone: str):
                 return
     elif site == "Spotify":
         if format["type"] == "track":
-            print(format["id"])
             data = SPOTIFY.track_metadata(format["id"], interaction.user.id)
-            print(data)
         else:
             await interaction.followup.send(embed=EmbedError("Non puoi riprodurre una playlist o un album."))
             return

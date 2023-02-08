@@ -1,10 +1,9 @@
 import re
-import YOUTUBE
 
 siteRegex = re.compile(r"^(?:https?://)?((([a-z]+)\.)?([A-Za-z0-9.-]+\.[A-Za-z]{2,}))")
 
 # Get the type of promt
-def promt(text, userid):
+def promt(text):
     isSite = re.search(siteRegex, text)
     # Gruppo 1: dominio completo
     # Gruppo 2: sottodominio + .
@@ -103,4 +102,6 @@ def promt(text, userid):
             }
     else:
         # If the text is a not a link search on Youtube
-        return YOUTUBE.track_search(text, userid)
+        return {
+            "site": "toSearch"
+        }

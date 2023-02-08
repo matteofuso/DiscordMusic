@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 
 # Get the config file
 try:
@@ -51,9 +52,6 @@ if "youtubeApiKey" not in config:
     
 def get_config():
     return config["token"], config["volume"]
-
-def get_youtube_api_key():
-    return config["youtubeApiKey"]
 
 with open("config.json", "w") as f:
     f.write(json.dumps(config, indent=4))

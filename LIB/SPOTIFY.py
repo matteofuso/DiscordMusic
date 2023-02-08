@@ -1,8 +1,9 @@
+import os, os.path
+os.chdir("cache")
 from librespot.core import Session
 from librespot.metadata import TrackId
 from librespot.audio.decoders import AudioQuality, VorbisOnlyAudioQuality
 from getpass import getpass
-import os
 import json
 import requests
 import datetime
@@ -12,31 +13,23 @@ TOKEN_REFRESH = 50 * 60 # A token is valid for 60 minutes, so we refresh it ever
 # Create a session
 def login():
     global SESSION
-    with open("../config.json", "r") as configFile:
-        config = json.load(configFile)
-        if "spotify" in config:
-            try:
-                with open("../cache/temp.json", "w") as f:
-                    json.dump(config["spotify"], f)
-                SESSION = Session.Builder().stored_file("/temp.json").create()
-                return
-            except RuntimeError:
-                pass
+    if os.path.isfile("credentials.json"):
+        try:
+            SESSION = Session.Builder().stored_file().create()
+            return
+        except RuntimeError:
+            pass
     while True:
-        user_name = input("Username: ")
-        password = getpass()
+        user_name = input("Username Spotify: ")
+        password = getpass("Password Spotify: ")
         try:
             SESSION = Session.Builder().user_pass(user_name, password).create()
-            with open("credentials.json", "r") as f:
-                data = json.load(f)
-                config["spotify"] = data
-                with open("config.json", "w") as configFile:
-                    json.dump(config, configFile, indent=4)
-            os.remove("credentials.json")
             return
         except RuntimeError:
             pass
 login()
+os.chdir("..")
+
 
 # Set the quality
 if SESSION.get_user_attribute("type") == "premium":
@@ -61,14 +54,19 @@ def format_duration(ms):
 def get_token():
     with open("config.json", "r") as configFile:
         config = json.load(configFile)
-    if "token" in config["spotify"]:
-        token = config["spotify"]["token"]
-        if int(datetime.datetime.now().timestamp()) > config["spotify"]["issued_at"] + TOKEN_REFRESH:
-            token = SESSION.tokens().get("user-read-email")
+    if "spotify" in config:
+        if "token" in config["spotify"]:
+            token = config["spotify"]["token"]
+            if int(datetime.datetime.now().timestamp()) > config["spotify"]["issued_at"] + TOKEN_REFRESH:
+                token = SESSION.tokens().get("user-read-email")
+                config["spotify"]["token"] = token
+                config["spotify"]["issued_at"] = int(datetime.datetime.now().timestamp())
+        else:
             config["spotify"]["token"] = token
             config["spotify"]["issued_at"] = int(datetime.datetime.now().timestamp())
     else:
         token = SESSION.tokens().get("user-read-email")
+        config["spotify"] = {}
         config["spotify"]["token"] = token
         config["spotify"]["issued_at"] = int(datetime.datetime.now().timestamp())
     with open("config.json", "w") as configFile:
