@@ -1,7 +1,7 @@
 # DiscordMusic
 
-After Youtube has striked down all music bots, I decided to make my own bot for Discord. This bot is still in development, and I will try to add more features as soon as possible.
-Any suggestions are welcome! Here you can find the status of the project.
+After Youtube has striked down all music bots, I decided to make my own bot for Discord. This bot is still working in progress. I will try to add more features as soon as possible.
+Any suggestions are welcome (Please make pull requests / open an issue)! Here you can find the status of the project.
 
 - [ ] Commands:
     - [x] Play
