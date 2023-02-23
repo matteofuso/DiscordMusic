@@ -1,3 +1,4 @@
+# Discord bot that lets you listening to youtube videos on discord with your friends through a link
 import discord
 from discord import app_commands, Intents, Client
 from LIB import YOUTUBE, SPOTIFY, CONFIGS, UTILS
@@ -68,7 +69,7 @@ guilds = Guild()
 @client.event
 async def on_ready():
     url = f"https://discord.com/api/oauth2/authorize?client_id={client.user.id}&scope=applications.commands"
-    print(f"Loggato come {client.user} (ID: {client.user.id})\n\nUsa questo link per invitare {client.user} nel tuo server:\n{url}")
+    print(f"Logged as {client.user} (ID: {client.user.id})\n\n Use this link to invite {client.user} in your server:\n{url}")
     # Set the bot presence - Uncomment the line you want to use
     #await client.change_presence(activity=discord.Game(name="")) # Playing ...
     #await client.change_presence(activity=discord.Streaming(name="", url="")) # Streaming ...
@@ -76,7 +77,7 @@ async def on_ready():
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="my code")) # Watching ...
 
 # Create an embed with the song info
-def EmbedDetails(data, length, type="Riproducendo..."):
+def EmbedDetails(data, length, type="Playing..."):
     if length == 0:
         return
     if data["toFetch"]:
@@ -89,9 +90,9 @@ def EmbedDetails(data, length, type="Riproducendo..."):
         start = data["start"]
         coverLink = data["cover"]
     if length == 1:
-        description = f"[{data['title']} ({data['author']})]({data['url']}) [<@{data['user']}>]\nDurata: ` [{start} / {duration}] `"
+        description = f"[{data['title']} ({data['author']})]({data['url']}) [<@{data['user']}>]\nduration: ` [{start} / {duration}] `"
     else:
-        description = f"[{data['title']} ({data['author']})]({data['url']}) (E altri {length-1} elementi) [<@{data['user']}>]\nDurata: ` [{start} / {duration}] `"
+        description = f"[{data['title']} ({data['author']})]({data['url']}) (Others {length-1} elements) [<@{data['user']}>]\nduration: ` [{start} / {duration}] `"
     embed = discord.Embed(title=type, description=description)
     if data["coverLocal"]:
         file = discord.File(coverLink, filename="cover.jpg")  
@@ -103,24 +104,24 @@ def EmbedDetails(data, length, type="Riproducendo..."):
 
 # Create an embed with the error
 def EmbedError(error):
-    embed = discord.Embed(title="Errore", description=error, color=0xFF0000)
+    embed = discord.Embed(title="Error", description=error, color=0xFF0000)
     return embed
 
 # Play command
 @client.tree.command()
 async def play(interaction: discord.Interaction, canzone: str):
-    """Riproduci una canzone
+    """Play a song
 
     Parameters
     -----------
     canzone: str
-        Nome o URL della canzone da riprodurre
+        Name or URL of the song to play
     """
     # Defer the response
     await interaction.response.defer()
     # If the user is not connected to a voice channel
     if not interaction.user.voice:
-        await interaction.followup.send(embed=EmbedError("Non sei connesso a un canale vocale."))
+        await interaction.followup.send(embed=EmbedError("You are not in a voice channel."))
         return
     # If the bot is connected to a voice channel
     if interaction.guild.voice_client:
@@ -157,7 +158,7 @@ async def play(interaction: discord.Interaction, canzone: str):
         if format["type"] == "track":
             data = SPOTIFY.track_metadata(format["id"], interaction.user.id)
         else:
-            await interaction.followup.send(embed=EmbedError("Non puoi riprodurre una playlist o un album."))
+            await interaction.followup.send(embed=EmbedError("You can not play a playlist or an album."))
             return
         if "error" in data:
             await interaction.followup.send(embed=EmbedError(data["error"]))
@@ -170,7 +171,7 @@ async def play(interaction: discord.Interaction, canzone: str):
     guild_id = str(interaction.guild.id)
     if voice_channel.is_paused() or voice_channel.is_playing():
         guilds.add_queue(data, guild_id)
-        embed, file = EmbedDetails(data[0], len(data), "Aggiunto alla coda...")
+        embed, file = EmbedDetails(data[0], len(data), "Added to the queue...")
         if file == "":
             await interaction.followup.send(embed=embed)
         else:
@@ -196,7 +197,7 @@ async def play(interaction: discord.Interaction, canzone: str):
 # Function that plays the next song in the queue
 async def nextQueue(e, voice_channel, guild_id, text_channel):
     if e is not None:
-        await text_channel.send(embed=EmbedError("Errore durante la riproduzione"))
+        await text_channel.send(embed=EmbedError("Error during riproduction of the song"))
         return
     size = guilds.size_queue(guild_id)
     if size == 0:
@@ -222,34 +223,34 @@ async def nextQueue(e, voice_channel, guild_id, text_channel):
 # Stop command
 @client.tree.command()
 async def skip(interaction: discord.Interaction):
-    """Passa alla prossima canzone"""
+    """Skip to the next song"""
     # Check if the user is connected to a voice channel
     if not interaction.user.voice:
-        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("You are not in a voice channel."))
         return
     # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
         # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
+            await interaction.response.send_message(embed=EmbedError("You are not in the same voice channel of the bot."))
             return
     else:
         # If the bot is not connected to a voice channel
-        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("Bot is not in a voice channel."))
         return
     # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
     if not (voice_channel.is_playing() or voice_channel.is_paused()):
-        await interaction.response.send_message(embed=EmbedError("Non stai riproducendo nulla."))
+        await interaction.response.send_message(embed=EmbedError("You are playing nothing."))
         return
     # Skip the song
     voice_channel.stop()
-    await interaction.response.send_message("Riproduco la prossima canzone.")
+    await interaction.response.send_message("Playing the next song.")
 
 # Volume control
 @client.tree.command()
 async def volume(interaction: discord.Interaction, volume: int):
-    """Controlla il volume
+    """Check the volume
 
     Parameters
     -----------
@@ -260,97 +261,97 @@ async def volume(interaction: discord.Interaction, volume: int):
     if interaction.guild.voice_client:
         # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
+            await interaction.response.send_message(embed=EmbedError("You are not in the bot voice channel."))
             return
     # Check if the volume is valid
     if volume <= 0 or volume > 200:
-        await interaction.response.send_message(embed=EmbedError("Il volume deve essere compreso tra 0 e 200."))
+        await interaction.response.send_message(embed=EmbedError("Volume needs to be greater than 0 and less than 200."))
         return
     guilds.set_volume(str(interaction.guild.id), volume / 200)
-    await interaction.response.send_message(f"Volume impostato a {volume}%")
+    await interaction.response.send_message(f"Volume set to {volume}%")
 
 # Stop command
 @client.tree.command()
 async def stop(interaction: discord.Interaction):
-    """Ferma la riproduzione"""
+    """Stop reproduction"""
     # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
         # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
+            await interaction.response.send_message(embed=EmbedError("You are not in the bot voice channel."))
             return
     else:
         # If the bot is not connected to a voice channel
-        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("Bot is not in a voice channel."))
         return
     # Clear the queue
     guilds.clear_queue(str(interaction.guild.id))
     # Check if the user is connected to a voice channel
     if not interaction.user.voice:
-        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("You are not in a voice channel."))
         return
     # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
     if not (voice_channel.is_playing() or voice_channel.is_paused()):
-        await interaction.response.send_message(embed=EmbedError("Non ci sono video da fermare."))
+        await interaction.response.send_message(embed=EmbedError("There aren't any videos to stop."))
         return
     # Stop the song
     voice_channel.stop()
-    await interaction.response.send_message("La riproduzione è stata fermata.")
+    await interaction.response.send_message("Reproduction has been stopped.")
 
 # Pause command
 @client.tree.command()
 async def pause(interaction: discord.Interaction):
-    """Pausa la canzone"""
+    """Stop the song"""
     # Check if the user is connected to a voice channel
     if not interaction.user.voice:
-        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("You are not in a voice channel."))
         return
     # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
         # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
+            await interaction.response.send_message(embed=EmbedError("You are not in the bot voice channel."))
             return
     else:
         # If the bot is not connected to a voice channel
-        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("Bot is not in a voice channel."))
         return
     # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
     if not voice_channel.is_playing():
-        await interaction.response.send_message(embed=EmbedError("Non sto riproducendo nulla."))
+        await interaction.response.send_message(embed=EmbedError("I'm playing nothing."))
         return
     # Pause the song
     voice_channel.pause()
-    await interaction.response.send_message("Ho messo in pausa la musica.")
+    await interaction.response.send_message("I paused the song.")
 
 # Resume command
 @client.tree.command()
 async def resume(interaction: discord.Interaction):
-    """Riprende la canzone"""
+    """Song retakes"""
     # Check if the user is connected to a voice channel
     if not interaction.user.voice:
-        await interaction.response.send_message(embed=EmbedError("Non sei connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("You are not in a voice channel."))
         return
     # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
         # Check if the user is connected to the same voice channel as the bot
         if interaction.user.voice.channel != interaction.guild.voice_client.channel:
-            await interaction.response.send_message(embed=EmbedError("Non sei connesso al canale vocale del bot."))
+            await interaction.response.send_message(embed=EmbedError("You are not in the bot voice channel."))
             return
     else:
         # If the bot is not connected to a voice channel
-        await interaction.response.send_message(embed=EmbedError("Il bot non è connesso a un canale vocale."))
+        await interaction.response.send_message(embed=EmbedError("Bot is not in a voice channel."))
         return
     # Check ther's a song paused
     voice_channel = interaction.guild.voice_client
     if not voice_channel.is_paused():
-        await interaction.response.send_message(embed=EmbedError("Non ci sono canzoni in pausa."))
+        await interaction.response.send_message(embed=EmbedError("There are no paused songs"))
         return
     # Resume the song
     voice_channel.resume()
-    await interaction.response.send_message("Ho ripreso la musica.")
+    await interaction.response.send_message("I've just retaken playing music.")
 
 # Run the bot
 client.run(token)
