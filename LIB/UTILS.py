@@ -42,7 +42,7 @@ def promt(text):
                         }
             # If the link is not valid
             return {
-                "error": "Il link di Youtube che hai inserito non è valido"
+                "error": "This Youtube link is not valid"
             }
         # If the site is Youtube Mobile
         elif fullDomain == "youtu.be":
@@ -73,7 +73,7 @@ def promt(text):
                     }
             # If the link is not valid
             return {
-                "error": "Il link di Youtube che hai inserito non è valido"
+                "error": "This Youtube link is not valid"
                 }
         # If the site is Spotify - NOT SUPPORTED YET
         elif fullDomain in ("open.spotify.com", "play.spotify.com"):
@@ -88,17 +88,17 @@ def promt(text):
                 }
             else:
                 return {
-                    "error": "Il link di Spotify che hai inserito non è valido"
+                    "error": "This Spotify link is not valid"
                 }
         # If the site is SoundCloud - NOT SUPPORTED YET
         elif fullDomain == "soundcloud.com":
             return {
-                "error": "SoundCloud non è ancora supportato"
+                "error": "SoundCloud is not supported yet"
             }
         # If the site is not supported
         else:
             return {
-                "error": f"Il sito {fullDomain} non è supportato"
+                "error": f"The site {fullDomain} is not supported (yet?)"
             }
     else:
         # If the text is a not a link search on Youtube

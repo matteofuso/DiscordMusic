@@ -17,7 +17,7 @@ def login():
         try:
             SESSION = Session.Builder().stored_file().create()
             return
-        except RuntimeError:
+        except:
             pass
     while True:
         user_name = input("Username Spotify: ")
@@ -25,7 +25,7 @@ def login():
         try:
             SESSION = Session.Builder().user_pass(user_name, password).create()
             return
-        except RuntimeError:
+        except:
             pass
 login()
 os.chdir("..")

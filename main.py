@@ -1,7 +1,7 @@
 # Discord bot that lets you listening to youtube videos on discord with your friends through a link
 import discord
 from discord import app_commands, Intents, Client
-from LIB import YOUTUBE, SPOTIFY, CONFIGS, UTILS
+from LIB import CONFIGS, YOUTUBE, SPOTIFY, UTILS
 import asyncio
 
 # Get token and the default volume
@@ -90,9 +90,9 @@ def EmbedDetails(data, length, type="Playing..."):
         start = data["start"]
         coverLink = data["cover"]
     if length == 1:
-        description = f"[{data['title']} ({data['author']})]({data['url']}) [<@{data['user']}>]\nduration: ` [{start} / {duration}] `"
+        description = f"[{data['title']} ({data['author']})]({data['url']}) [<@{data['user']}>]\nDuration: ` [{start} / {duration}] `"
     else:
-        description = f"[{data['title']} ({data['author']})]({data['url']}) (Others {length-1} elements) [<@{data['user']}>]\nduration: ` [{start} / {duration}] `"
+        description = f"[{data['title']} ({data['author']})]({data['url']}) (Others {length-1} elements) [<@{data['user']}>]\nDuration: ` [{start} / {duration}] `"
     embed = discord.Embed(title=type, description=description)
     if data["coverLocal"]:
         file = discord.File(coverLink, filename="cover.jpg")  
@@ -109,13 +109,13 @@ def EmbedError(error):
 
 # Play command
 @client.tree.command()
-async def play(interaction: discord.Interaction, canzone: str):
+async def play(interaction: discord.Interaction, song: str):
     """Play a song
 
     Parameters
     -----------
-    canzone: str
-        Name or URL of the song to play
+    song: str
+        Name or URL of the song to play (Supported YouTube, Spotify)
     """
     # Defer the response
     await interaction.response.defer()
@@ -130,7 +130,7 @@ async def play(interaction: discord.Interaction, canzone: str):
             await interaction.followup.send(embed=EmbedError("You are not connected to the same voice channel as the bot."))
             return
     # Get datails about the promt
-    format = UTILS.promt(canzone)
+    format = UTILS.promt(song)
     search = False
     # If there is an error
     if "error" in format:
@@ -144,7 +144,7 @@ async def play(interaction: discord.Interaction, canzone: str):
         site = "Youtube"
     # Check the site and fetch the song details
     if site == "toSearch":
-        data = YOUTUBE.track_search(canzone, interaction.user.id)
+        data = YOUTUBE.track_search(song, interaction.user.id)
     elif site == "Youtube":
         # If the promt is a link
         if not search:
@@ -158,7 +158,7 @@ async def play(interaction: discord.Interaction, canzone: str):
         if format["type"] == "track":
             data = SPOTIFY.track_metadata(format["id"], interaction.user.id)
         else:
-            await interaction.followup.send(embed=EmbedError("You can not play a playlist or an album."))
+            await interaction.followup.send(embed=EmbedError("You can not play a playlist or an album at the moment."))
             return
         if "error" in data:
             await interaction.followup.send(embed=EmbedError(data["error"]))
@@ -255,7 +255,7 @@ async def volume(interaction: discord.Interaction, volume: int):
     Parameters
     -----------
     volume: int
-        Percentuale di volume da impostare
+        Percentage of volume
     """
     # Check if the bot is connected to a voice channel
     if interaction.guild.voice_client:
@@ -265,7 +265,7 @@ async def volume(interaction: discord.Interaction, volume: int):
             return
     # Check if the volume is valid
     if volume <= 0 or volume > 200:
-        await interaction.response.send_message(embed=EmbedError("Volume needs to be greater than 0 and less than 200."))
+        await interaction.response.send_message(embed=EmbedError("Volume must be greater than 0 and less than 200."))
         return
     guilds.set_volume(str(interaction.guild.id), volume / 200)
     await interaction.response.send_message(f"Volume set to {volume}%")
@@ -293,7 +293,7 @@ async def stop(interaction: discord.Interaction):
     # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
     if not (voice_channel.is_playing() or voice_channel.is_paused()):
-        await interaction.response.send_message(embed=EmbedError("There aren't any videos to stop."))
+        await interaction.response.send_message(embed=EmbedError("There aren't any song to stop."))
         return
     # Stop the song
     voice_channel.stop()
@@ -320,7 +320,7 @@ async def pause(interaction: discord.Interaction):
     # Check if the bot is playing a song
     voice_channel = interaction.guild.voice_client
     if not voice_channel.is_playing():
-        await interaction.response.send_message(embed=EmbedError("I'm playing nothing."))
+        await interaction.response.send_message(embed=EmbedError("I ain't playing anything."))
         return
     # Pause the song
     voice_channel.pause()
@@ -329,7 +329,7 @@ async def pause(interaction: discord.Interaction):
 # Resume command
 @client.tree.command()
 async def resume(interaction: discord.Interaction):
-    """Song retakes"""
+    """Resume the song"""
     # Check if the user is connected to a voice channel
     if not interaction.user.voice:
         await interaction.response.send_message(embed=EmbedError("You are not in a voice channel."))
@@ -351,7 +351,7 @@ async def resume(interaction: discord.Interaction):
         return
     # Resume the song
     voice_channel.resume()
-    await interaction.response.send_message("I've just retaken playing music.")
+    await interaction.response.send_message("I've just resumed the current queue.")
 
 # Run the bot
 client.run(token)

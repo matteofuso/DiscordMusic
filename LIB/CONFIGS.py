@@ -2,6 +2,14 @@ import requests
 import json
 import os
 
+# Check for cache folder
+if not os.path.exists("cache"):
+    os.makedirs("cache")
+if not os.path.exists("cache/cover"):
+    os.makedirs("cache/cover")
+if not os.path.exists("cache/music"):
+    os.makedirs("cache/music")
+
 # Get the config file
 try:
     with open("config.json", 'r') as f:
@@ -13,7 +21,7 @@ except (FileNotFoundError, json.JSONDecodeError):
 while True:
     # If the token is not in the config file
     if "token" not in config:
-        print("Inserisci il token del bot:")
+        print("What's the token bot?")
         config["token"] = input("> ")
     # Check if the token is valid
     token = config["token"]
@@ -25,28 +33,28 @@ while True:
             "https://discord.com/api/v10/users/@me", headers=head).json()
     except requests.exceptions.RequestException as e:
         if e.__class__ == requests.exceptions.ConnectionError:
-            exit(f"ConnectionError: Discord è bloccato nelle reti pubbliche, verifica di riuscire ad accedere a https://discord.com")
+            exit(f"ConnectionError: Discord is blocked in pubblic network, verify that you're able to connect to https://discord.com")
         elif e.__class__ == requests.exceptions.Timeout:
-            exit(f"Timeout: La connessione alle API di Discord ha impiegato troppo tempo (Sei rate limited?)")
-        exit(f"Errore sconosciuto! Ulteriori informazioni:\n{e}")
+            exit(f"Timeout: Connection to Discord API take too long (Are you rate limited?)")
+        exit(f"Unknown error! Other informations:\n{e}")
     # If the token is valid, break the loop
     if "id" in data:
         break
     # If the token is not valid, ask again
-    print(f"Token non valido Reinserisci il token: ")
+    print(f"Token is invalid. Reinsert it: ")
     config.pop("token", None)
 
 # Save the token
 if "volume" not in config:
-    print("Inserisci il volume default (0-200): ")
+    print("What's the bot default volume? (0-200) ")
     volume = int(input("> "))
     while volume <= 0 or volume > 200:
-        print("Il volume deve essere compreso tra 0 e 200. Reinserisci il volume: ")
+        print("Volume must be greater than 0 and less than 200. Reinsert the volume: ")
         volume = input("> ")
     config["volume"] = volume / 200
     
 if "youtubeApiKey" not in config:
-    print("Inserisci l'API Key di Youtube: ")
+    print("Insert the YouTube l'API Key: ")
     youtubeApiKey = input("> ")
     config["youtubeApiKey"] = youtubeApiKey
     
