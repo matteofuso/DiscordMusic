@@ -1,3 +1,26 @@
+"""
+YouTube Downloader
+~~~~~~~~~~~~~~~~~~~~~
+
+This module allows you to download tracks from YouTube.
+
+Functions:
+
+    convert_duration(duration) -> return the formatted duration of a track
+    
+    cover_url(url, id) -> crop an image and return the path to the file
+    
+    get_duration(id) -> return the duration of a track
+    
+    parsed(video, userid, music, moreInfo) -> format the youtube json response
+    
+    fetch(url, userid, type, id) -> return the metadata of a track
+    
+    track_download(id) -> download a track and return the path to the file
+    
+    track_search(query, userid) -> search a track and return the metadata of the first result
+"""
+
 import yt_dlp
 import requests
 from PIL import Image

@@ -1,3 +1,14 @@
+"""
+Configs Module
+~~~~~~~~~~~~~~~~~~~~~
+
+This module allows you to manage the bot configs.
+
+Functions:
+
+    get_config() -> return the bot token and the volume
+"""
+
 import requests
 import json
 import os

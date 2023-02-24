@@ -1,3 +1,14 @@
+"""
+Utils module
+~~~~~~~~~~~~~~~~~~~~~
+
+Module for utility functions.
+
+Functions:
+
+    promt(text) -> return the site, id, type of a promt
+"""
+
 import re
 
 siteRegex = re.compile(r"^(?:https?://)?((([a-z]+)\.)?([A-Za-z0-9.-]+\.[A-Za-z]{2,}))")

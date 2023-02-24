@@ -1,3 +1,20 @@
+"""
+Spotify Downloader
+~~~~~~~~~~~~~~~~~~~~~
+
+This module allows you to download tracks from Spotify.
+
+Functions:
+
+    format_duration(ms) -> return the formatted duration of a track
+    
+    get_token() -> return a spotify token
+    
+    track_metadata(id, userid) -> return the metadata of a track
+    
+    downlaod_track(id) -> download a track and return the path to the file
+"""
+
 import os, os.path
 os.chdir("cache")
 from librespot.core import Session
