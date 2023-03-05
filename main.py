@@ -144,7 +144,8 @@ async def play(interaction: discord.Interaction, song: str):
         site = "Youtube"
     # Check the site and fetch the song details
     if site == "toSearch":
-        data = YOUTUBE.track_search(song, interaction.user.id)
+        site = "Youtube"
+        data = YOUTUBE.track_search(song, interaction.user.id)["search"]
     elif site == "Youtube":
         # If the promt is a link
         if not search:
