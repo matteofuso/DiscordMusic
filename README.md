@@ -12,6 +12,7 @@ Any suggestions are welcome (Please make pull requests / open an issue)! Here yo
     - [x] Skip
     - [ ] Skip x songs
     - [ ] Shuffle
+    - [ ] Queue
     - [ ] Config (Language, Credentials, etc.)
 
 - [x] Type:
@@ -19,22 +20,24 @@ Any suggestions are welcome (Please make pull requests / open an issue)! Here yo
     - [x] Playlist
 
 - [ ] Cache:
-    - [ ] Auto delete file when the folder is bigger than xGB (configurable), in a FIFO way
+    - [ ] Auto delete file when the folder is bigger than xGB (configurable)
     - [ ] Skip Fetching if the file is already in the cache
 
 - [ ] Services:
     - [x] Youtube Music, Youtube
-    - [ ] Spotify
+    - [x] Spotify
     - [ ] Soundcloud
     - [ ] Deezer
 
 - [ ] Features:
     - [x] Multi-Server
     - [ ] Trivia
-    - [ ] Save queue in a file (When the bot is restarted, the queue is not lost)
+    - [ ] Save queue in a file (When the bot is restarted, the queue is not lost + Less RAM)
     - [ ] Error handling
     - [ ] Music Download
     - [ ] Auto Update
+
+- [ ] Rewrite to optimize the code
 
 # Install
 Before you start, you need to install Python (Latest version is recommended), then install the requirements using:

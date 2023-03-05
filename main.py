@@ -156,14 +156,10 @@ async def play(interaction: discord.Interaction, song: str):
                 await interaction.followup.send(embed=EmbedError(data["error"]))
                 return
     elif site == "Spotify":
-        if format["type"] == "track":
-            data = SPOTIFY.track_metadata(format["id"], interaction.user.id)
-        else:
-            await interaction.followup.send(embed=EmbedError("You can not play a playlist or an album at the moment."))
-            return
-        if "error" in data:
-            await interaction.followup.send(embed=EmbedError(data["error"]))
-            return
+            data = SPOTIFY.fetch(format["id"], format["type"], interaction.user.id)
+            if "error" in data:
+                await interaction.followup.send(embed=EmbedError(data["error"]))
+                return
     # If the bot is not connected to a voice channel
     if not interaction.guild.voice_client:
         await interaction.user.voice.channel.connect()

@@ -90,14 +90,8 @@ def get_token():
         json.dump(config, configFile, indent=4)
     return token
 
-# Function to get the metadata
-def track_metadata(id, userid):
-    headers = {
-        "Authorization": f"Bearer {get_token()}",
-        "Content-Type": "application/json"
-    }
-    api = requests.get(f"https://api.spotify.com/v1/tracks/{id}", headers=headers)
-    response = api.json()
+# Function to parse a response
+def parse(response, userid):
     for artist in response["artists"]:
         artists = f"{artist['name']},"
     artists = artists[:-1]
@@ -108,8 +102,7 @@ def track_metadata(id, userid):
         bitrate = 160
     id = response["id"]
     duration, start = format_duration(response["duration_ms"])
-    return [
-        {
+    return {
         "id": id,
         "url": f"https://open.spotify.com/track/{id}",
         "album": response["album"]["name"],
@@ -127,7 +120,42 @@ def track_metadata(id, userid):
         "coverLocal": False,
         "site": "Spotify"
     }
+
+# Function to get the metadata of a track
+def track(id, userid):
+    headers = {
+        "Authorization": f"Bearer {get_token()}",
+        "Content-Type": "application/json"
+    }
+    api = requests.get(f"https://api.spotify.com/v1/tracks/{id}", headers=headers)
+    response = api.json()
+    return [
+        parse(response, userid)
     ]
+    
+# Function to get the metadata of a playlist
+def playlist(id, userid):
+    headers = {
+        "Authorization": f"Bearer {get_token()}",
+        "Content-Type": "application/json"
+    }
+    api = requests.get(f"https://api.spotify.com/v1/playlists/{id}", headers=headers)
+    response = api.json()
+    tracks = []
+    for items in response["tracks"]["items"]:
+        tracks.append(parse(items["track"], userid))
+    return tracks
+
+# Function to get the metadata
+def fetch(id, type, userid):
+    if type == "track":
+        return track(id, userid)
+    elif type == "playlist":
+        return playlist(id, userid)
+    else:
+        return {
+            "error": "Invalid type"
+        }
 
 # Download a track
 def downlaod_track(id):
